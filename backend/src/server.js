@@ -48,7 +48,7 @@ const createTransporter = async () => {
         }
       }
     );
-    const dns = require("dns");
+
 
     dns.lookup("smtp.gmail.com", { all: true }, (err, addresses) => {
       console.log("DNS:", addresses);
