@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Level Up in Tech",
+    "slug": "level-up-in-tech",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/LevelUp-logo.png",
+    "scheme": "levelupthech",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./src/assets/LevelUp-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.levelupthech.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/LevelUp-logo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.levelupthech.app"
+    },
+    "web": {
+      "favicon": "./src/assets/LevelUp-logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "05c8bfda-a75c-45db-97ac-7b2cb330fd0d"
+      }
+    },
+    "owner": "jayaprakash_317",
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
