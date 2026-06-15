@@ -48,19 +48,20 @@ const createTransporter = async () => {
         }
       }
     );
+    const dns = require("dns");
 
+    dns.lookup("smtp.gmail.com", { all: true }, (err, addresses) => {
+      console.log("DNS:", addresses);
+    });
     const transporter = nodemailer.createTransport({
-      // host: process.env.SMTP_HOST,
-      host: "142.251.188.109",
-      tls: {
-        servername: "smtp.gmail.com"
-      },
+      host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT),
       secure: true,
+      family: 4,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
-      }
+      },
     });
 
     try {
