@@ -50,23 +50,17 @@ const createTransporter = async () => {
     );
 
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: process.env.SMTP_SECURE === 'true',
-
+      // host: process.env.SMTP_HOST,
+      host: "142.251.188.109",
+      tls: {
+        servername: "smtp.gmail.com"
+      },
+      port: Number(process.env.SMTP_PORT),
+      secure: true,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
-      },
-
-      family: 4, // attempt IPv4
-
-      connectionTimeout: 30000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
-
-      logger: true,
-      debug: true,
+      }
     });
 
     try {
