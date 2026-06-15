@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector, useDispatch } from 'react-redux';
 import { Feather } from '@expo/vector-icons';
 import { updateDifficulty, updateCount, setSpecificTopic, generateQuizAction } from '../redux/quizSlice';
+import { loadSession } from '../redux/authSlice';
 
 // Screens
 import LoginScreen from './LoginScreen';
@@ -19,7 +20,7 @@ import StreakScreen from './StreakScreen';
 
 const MainAppContainer = () => {
   const dispatch = useDispatch();
-  const { token, user } = useSelector((state) => state.auth);
+  const { token, user, isCheckingSession } = useSelector((state) => state.auth);
   const { quizState } = useSelector((state) => state.quiz);
   const insets = useSafeAreaInsets();
   
@@ -27,6 +28,20 @@ const MainAppContainer = () => {
   const [currentScreen, setCurrentScreen] = useState('MainTabs');
   // Tab index mapping: 0: Analytics, 1: Dashboard, 2: Settings, 3: Achievements, 4: Weak Topics
   const [activeTabIdx, setActiveTabIdx] = useState(1); 
+
+  useEffect(() => {
+    dispatch(loadSession());
+  }, [dispatch]);
+
+  // Loading Session Flow
+  if (isCheckingSession) {
+    return (
+      <View className="flex-1 bg-bgMain items-center justify-center">
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <ActivityIndicator size="large" color="#1a73e8" />
+      </View>
+    );
+  }
 
   // Unauthenticated Flow
   if (!token) {
