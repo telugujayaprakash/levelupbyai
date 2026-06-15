@@ -20,50 +20,148 @@ const nameFromEmail = (email) => {
 };
 
 // Helper: create nodemailer transporter (Ethereal fallback for dev)
+require('dotenv').config();
+
+const dns = require('dns');
+// const nodemailer = require('nodemailer');
+
+// Force IPv4 preference
+dns.setDefaultResultOrder('ipv4first');
+
+console.log('Node Version:', process.version);
+console.log('SMTP Host:', process.env.SMTP_HOST);
+
 const createTransporter = async () => {
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransport({
+  if (
+    process.env.SMTP_HOST &&
+    process.env.SMTP_USER &&
+    process.env.SMTP_PASS
+  ) {
+    dns.lookup(
+      process.env.SMTP_HOST,
+      { all: true },
+      (err, addresses) => {
+        if (err) {
+          console.error('DNS Lookup Error:', err);
+        } else {
+          console.log('DNS Records:', addresses);
+        }
+      }
+    );
+
+    const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
+      port: Number(process.env.SMTP_PORT || 587),
       secure: process.env.SMTP_SECURE === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+
+      family: 4, // attempt IPv4
+
+      connectionTimeout: 30000,
+      greetingTimeout: 30000,
+      socketTimeout: 30000,
+
+      logger: true,
+      debug: true,
     });
+
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP VERIFIED');
+    } catch (err) {
+      console.error('❌ SMTP VERIFY FAILED');
+      console.error(err);
+      throw err;
+    }
+
+    return transporter;
   }
-  // Dev fallback: Ethereal test account
+
+  console.log('⚠️ Using Ethereal fallback');
+
   const testAccount = await nodemailer.createTestAccount();
+
   return nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
     secure: false,
-    auth: { user: testAccount.user, pass: testAccount.pass },
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass,
+    },
   });
 };
 
-// Helper: send OTP email
 const sendOtpEmail = async (email, otp) => {
-  const transporter = await createTransporter();
-  const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM || '"Level Up in tech" <noreply@levelup.dev>',
-    to: email,
-    subject: `Your Level Up verification code: ${otp}`,
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0D0E12;border-radius:16px;border:1px solid #232733">
-        <h2 style="color:#ffffff;margin:0 0 8px">Level Up <span style="color:#4A5AF6">in tech</span></h2>
-        <p style="color:#8E9AA8;font-size:14px;margin:0 0 24px">Your one-time verification code</p>
-        <div style="background:#16181F;border:2px solid #4A5AF6;border-radius:12px;padding:24px;text-align:center">
-          <span style="color:#4A5AF6;font-size:48px;font-weight:900;letter-spacing:16px">${otp}</span>
-        </div>
-        <p style="color:#8E9AA8;font-size:12px;margin:24px 0 0">This code expires in 10 minutes. Do not share it with anyone.</p>
-      </div>
-    `,
-  });
-  // In dev, log preview URL
-  const preview = nodemailer.getTestMessageUrl(info);
-  if (preview) {
-    console.log('\n📧 OTP Email Preview:', preview);
+  try {
+    const transporter = await createTransporter();
+
+    const info = await transporter.sendMail({
+      from:
+        process.env.SMTP_FROM ||
+        '"Level Up in tech" <noreply@levelup.dev>',
+      to: email,
+      subject: `Your Level Up verification code: ${otp}`,
+      html: `<h2>Your OTP is: ${otp}</h2>`,
+    });
+
+    console.log('✅ Email sent');
+    console.log(info);
+
+    return info;
+  } catch (error) {
+    console.error('❌ OTP send error:', error);
+    throw error;
   }
-  console.log(`\n🔑 OTP for ${email}: ${otp}\n`);
 };
+// const createTransporter = async () => {
+//   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+//     return nodemailer.createTransport({
+//       host: process.env.SMTP_HOST,
+//       port: parseInt(process.env.SMTP_PORT || '587'),
+//       secure: process.env.SMTP_SECURE === 'true',
+//       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+//     });
+//   }
+//   // Dev fallback: Ethereal test account
+//   const testAccount = await nodemailer.createTestAccount();
+//   return nodemailer.createTransport({
+//     host: 'smtp.ethereal.email',
+//     port: 587,
+//     secure: false,
+//     auth: { user: testAccount.user, pass: testAccount.pass },
+//   });
+// };
+
+// // Helper: send OTP email
+// const sendOtpEmail = async (email, otp) => {
+//   const transporter = await createTransporter();
+//   const info = await transporter.sendMail({
+//     from: process.env.SMTP_FROM || '"Level Up in tech" <noreply@levelup.dev>',
+//     to: email,
+//     subject: `Your Level Up verification code: ${otp}`,
+//     html: `
+//       <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#0D0E12;border-radius:16px;border:1px solid #232733">
+//         <h2 style="color:#ffffff;margin:0 0 8px">Level Up <span style="color:#4A5AF6">in tech</span></h2>
+//         <p style="color:#8E9AA8;font-size:14px;margin:0 0 24px">Your one-time verification code</p>
+//         <div style="background:#16181F;border:2px solid #4A5AF6;border-radius:12px;padding:24px;text-align:center">
+//           <span style="color:#4A5AF6;font-size:48px;font-weight:900;letter-spacing:16px">${otp}</span>
+//         </div>
+//         <p style="color:#8E9AA8;font-size:12px;margin:24px 0 0">This code expires in 10 minutes. Do not share it with anyone.</p>
+//       </div>
+//     `,
+//   });
+//   // In dev, log preview URL
+//   const preview = nodemailer.getTestMessageUrl(info);
+//   if (preview) {
+//     console.log('\n📧 OTP Email Preview:', preview);
+//   }
+//   console.log(`\n🔑 OTP for ${email}: ${otp}\n`);
+// };
 
 // Models
 const User = require('./models/User');
@@ -156,7 +254,7 @@ app.post('/api/auth/verify', async (req, res) => {
     delete otpStore[normalizedEmail];
 
     let user = await User.findOne({ email: normalizedEmail });
-    
+
     // Create new user if they don't exist
     if (!user) {
       const displayName = nameFromEmail(normalizedEmail);
